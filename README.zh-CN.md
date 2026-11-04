@@ -33,6 +33,14 @@ Interpretation: older unlinked rows are review candidates, not proof of lost mem
 Recent unlinked rows may still be processing or may not produce an observation.
 ~~~
 
+也可以用合成日志试一下工作进程日志视图：
+
+~~~bash
+python3 claude_mem_audit.py --worker-log examples/parked-batches.synthetic.log
+~~~
+
+这份日志是虚构数据。命令会统计 2 个停放批次、2 个不同 ID 共出现 3 次、1 个重复 ID 和 1 条会话结束标记，只输出计数，不输出 ID。
+
 ## 检查本机数据库
 
 Claude-Mem 默认数据库路径：

@@ -33,6 +33,14 @@ Interpretation: older unlinked rows are review candidates, not proof of lost mem
 Recent unlinked rows may still be processing or may not produce an observation.
 ~~~
 
+Try the worker-log view with a synthetic fixture too:
+
+~~~bash
+python3 claude_mem_audit.py --worker-log examples/parked-batches.synthetic.log
+~~~
+
+The fixture is made-up data. The command counts two parked batches, three message-ID occurrences across two distinct IDs, one repeated ID, and one session-end marker. It prints the counts, not the IDs.
+
 ## Check a local database
 
 The default Claude-Mem database path is:

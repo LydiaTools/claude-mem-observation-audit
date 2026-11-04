@@ -1,0 +1,3 @@
+[WARN] [SESSION] Batch parked: its paid-send budget is spent, so it is not resent {parkedMessageIds=[101, 102], paidSendsSpent=2, maxPaidSends=2, pendingCount=6}
+[WARN] [SESSION] Batch parked: its paid-send budget is spent, so it is not resent {parkedMessageIds=[102], paidSendsSpent=1, maxPaidSends=2, pendingCount=2}
+[WARN] [SESSION] Session ended with parked batches; they were never resent {sessionDbId=4}
