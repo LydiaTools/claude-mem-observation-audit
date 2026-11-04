@@ -2,9 +2,9 @@
 
 [简体中文](README.zh-CN.md)
 
-A tool call can be recorded before it is linked to a memory observation. When you are investigating a worker restart or quota cooldown, it helps to see which rows are still unlinked—and how old they are.
+A queue-depth reading of zero may still leave a practical question: what happened to each captured tool event? When you are investigating a worker restart or quota cooldown, this CLI puts two read-only clues side by side: database link counts and selected worker-log markers.
 
-Claude-Mem Observation Audit is a small, read-only Python CLI for that one check. It counts tool_uses rows with a NULL observation_id, separates recent rows from older review candidates, and keeps session details opt-in.
+Claude-Mem Observation Audit is a small, read-only Python CLI. It counts `tool_uses` rows with a NULL `observation_id`, separates recent rows from older review candidates, and can count documented parked-batch and session-end markers in worker logs. Session details remain opt-in.
 
 It does not decide that data was lost. An unlinked row can be intentional or still processing.
 
@@ -53,12 +53,30 @@ Session IDs and project names are hidden unless you ask for them:
 python3 claude_mem_audit.py ~/.claude-mem/claude-mem.db --show-sessions --json
 ~~~
 
+## Check selected worker logs
+
+Count parked-batch markers in one log:
+
+~~~bash
+python3 claude_mem_audit.py --worker-log /path/to/worker.log
+~~~
+
+Pass rotated logs more than once, or combine the log scan with the database audit:
+
+~~~bash
+python3 claude_mem_audit.py --worker-log worker.log --worker-log worker.log.1
+python3 claude_mem_audit.py ~/.claude-mem/claude-mem.db --worker-log worker.log --json
+~~~
+
+The log scan recognizes the documented `Batch parked` marker with `parkedMessageIds` and `paidSendsSpent`, plus `Session ended with parked batches; they were never resent`. It reports aggregate counts and does not print message IDs or raw log lines. If no supported marker is found, the report says so; zero matches do not mean zero incidents.
+
 ## What it checks
 
 - Counts all rows in tool_uses.
 - Counts rows with and without an observation_id.
 - Separates recent unlinked rows from older review candidates.
 - Optionally lists the session groups and project names for older rows.
+- For selected worker logs, counts parked-batch events, message-ID occurrences/repeats, paid-send counts, and session-end drop markers.
 - Stops if the expected table or required columns are missing.
 
 It opens SQLite with mode=ro and issues schema reads and aggregate SELECT queries. It never selects tool input, tool response, or prompt columns, and it does not send data over the network.
@@ -68,18 +86,19 @@ It opens SQLite with mode=ro and issues schema reads and aggregate SELECT querie
 - An old unlinked row is not proof of a lost memory.
 - This tool does not recover, resend, delete, or modify anything.
 - It does not inspect worker health or reconstruct the processing queue.
-- It does not parse logs. A separate parked-batch log counter was shared in [Claude-Mem issue #4737](https://github.com/thedotmack/claude-mem/issues/4737); this project focuses on the SQLite link state.
+- A log marker is not proof that a database record is missing or recoverable. A log with no recognized markers is not proof that no queue event was lost.
 - It expects the tool_uses structure used by Claude-Mem v15.9.0. If the schema changes, it stops rather than guessing.
+- Log matching is limited to the documented 15.x message patterns above; it is not a complete worker-log parser.
 
 ## Why this check
 
-Users have reported observations left unlinked after quota cooldowns and worker restarts in [issue #4580](https://github.com/thedotmack/claude-mem/issues/4580). A separate discussion in [issue #4737](https://github.com/thedotmack/claude-mem/issues/4737) describes parked batches and recovery limits. Claude-Mem's v15.9.0 [doctor command](https://github.com/thedotmack/claude-mem/blob/v15.9.0/src/npx-cli/commands/doctor.ts) checks installation and worker health; it does not query tool_uses.observation_id.
+Users have reported observations left unlinked after quota cooldowns and worker restarts in [issue #4580](https://github.com/thedotmack/claude-mem/issues/4580). In [issue #4737](https://github.com/thedotmack/claude-mem/issues/4737), users shared counts of parked batches and session-end drops, and discussed how a zero queue-depth reading can miss parked events. Claude-Mem's v15.9.0 [doctor command](https://github.com/thedotmack/claude-mem/blob/v15.9.0/src/npx-cli/commands/doctor.ts) checks installation and worker health; it does not query tool_uses.observation_id.
 
-This CLI makes the database relationship visible without reading the stored tool content.
+This CLI makes database and selected log evidence visible without reading stored tool content or sending local data over the network.
 
 ## Preview status and feedback
 
-The synthetic demo has been run on macOS with Python 3.9. Compatibility with real user databases has not yet been independently confirmed. If you try it, report the Claude-Mem version, operating system, Python version, and any schema error in [Issues](https://github.com/LydiaTools/claude-mem-observation-audit/issues).
+The synthetic database demo has been run on macOS with Python 3.9. The new log scan is an early preview based on public 15.x log markers; compatibility with every real database or log format has not been independently confirmed. If you try it, report the Claude-Mem version, operating system, Python version, and whether any markers were recognized in [Issues](https://github.com/LydiaTools/claude-mem-observation-audit/issues).
 
 Please do not attach a database, worker log, prompt, tool input, or tool response to an issue.
 

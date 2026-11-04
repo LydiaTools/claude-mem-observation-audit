@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only audit for Claude-Mem tool-use rows without observation links."""
+"""Read-only audit for Claude-Mem observation links and worker log markers."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import sys
 import time
 from typing import Any
 
+from worker_log_audit import WorkerLogAuditError, audit_worker_logs
 
 REQUIRED_COLUMNS = {
     "content_session_id",
@@ -190,6 +191,63 @@ def demo_report(stale_hours: int, show_sessions: bool) -> dict[str, Any]:
 
 
 def render_text(report: dict[str, Any]) -> str:
+    if "worker_log_audit" in report:
+        database_report = {
+            key: value for key, value in report.items() if key != "worker_log_audit"
+        }
+        lines = (
+            render_text(database_report).splitlines()
+            if "tool_use_rows" in database_report
+            else ["Claude-Mem queue log audit", "Read-only · aggregate counts only"]
+        )
+        log_report = report["worker_log_audit"]
+        lines += [
+            "",
+            "Worker log audit",
+            f"Log files scanned: {log_report['log_files_scanned']}",
+            f"Lines scanned: {log_report['lines_scanned']}",
+            f"Parked batch events: {log_report['parked_batch_events']}",
+            (
+                "Parked message IDs: "
+                f"{log_report['distinct_parked_message_ids']} distinct across "
+                f"{log_report['parked_message_id_occurrences']} occurrences"
+            ),
+            (
+                "IDs repeated in selected logs: "
+                f"{log_report['message_ids_repeated_in_log']}"
+            ),
+            (
+                "Session-end 'never resent' markers: "
+                f"{log_report['session_end_drop_lines']}"
+            ),
+            (
+                "paidSendsSpent distribution: "
+                + (
+                    ", ".join(
+                        f"{count} event(s) at {spent}"
+                        for spent, count in log_report[
+                            "paid_sends_spent_events"
+                        ].items()
+                    )
+                    or "none"
+                )
+            ),
+        ]
+        if not log_report["recognized_format"]:
+            lines.append(
+                "No supported log markers matched; zero counts do not establish "
+                "that no queue events were lost."
+            )
+        lines += [
+            "",
+            "Interpretation: log markers are review signals, not proof that a "
+            "database record is missing or recoverable.",
+            "Raw log lines and message IDs are not emitted.",
+        ]
+        if "checked_at_utc" in report:
+            lines += ["", "Checked at UTC: " + report["checked_at_utc"]]
+        return "\n".join(lines)
+
     lines = [
         "Claude-Mem observation audit",
         "Read-only · aggregate counts only unless session details are requested",
@@ -226,7 +284,7 @@ def render_text(report: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Read-only counts of Claude-Mem tool-use rows with no linked observation."
+            "Read-only audit of Claude-Mem observation links and selected worker logs."
         )
     )
     parser.add_argument(
@@ -247,22 +305,36 @@ def main() -> int:
     parser.add_argument(
         "--demo", action="store_true", help="Run a synthetic in-memory example"
     )
+    parser.add_argument(
+        "--worker-log",
+        type=Path,
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Read a selected worker log; repeat for rotated log files",
+    )
     args = parser.parse_args()
 
     if args.stale_hours < 1:
         parser.error("--stale-hours must be at least 1")
-    if args.demo and args.database:
-        parser.error("--demo does not accept a database path")
-    if not args.demo and not args.database:
-        parser.error("provide a database path or --demo")
+    if args.demo and (args.database or args.worker_log):
+        parser.error("--demo does not accept a database path or worker log")
+    if not args.demo and not args.database and not args.worker_log:
+        parser.error("provide a database path, --worker-log, or --demo")
+    if args.show_sessions and not args.database and not args.demo:
+        parser.error("--show-sessions requires a database path")
 
     try:
         if args.demo:
             report = demo_report(args.stale_hours, args.show_sessions)
-        else:
+        elif args.database:
             report = audit_database(
                 args.database, args.stale_hours, args.show_sessions
             )
+        else:
+            report = {}
+        if args.worker_log:
+            report["worker_log_audit"] = audit_worker_logs(args.worker_log)
         report["checked_at_utc"] = now_utc()
 
         if args.json:
@@ -270,7 +342,7 @@ def main() -> int:
         else:
             print(render_text(report))
         return 0
-    except AuditError as error:
+    except (AuditError, WorkerLogAuditError) as error:
         print(f"Audit stopped: {error}", file=sys.stderr)
         return 2
 
