@@ -8,13 +8,15 @@ Claude-Mem 观察关联检查是一个只读 Python 命令行工具。它统计 
 
 它不会判定数据已经丢失。未关联记录可能仍在处理，也可能不会生成观察记录。
 
-## 先看示例
+## 快速开始
 
 ~~~bash
+git clone https://github.com/LydiaTools/claude-mem-observation-audit.git
+cd claude-mem-observation-audit
 python3 claude_mem_audit.py --demo
 ~~~
 
-示例只使用合成的内存数据库，不会打开你本机的 Claude-Mem 文件。
+需要 Python 3.9 或更新版本，不需要安装第三方包。示例只使用合成的内存数据库，不会打开你本机的 Claude-Mem 文件。
 
 示例输出：
 
@@ -77,7 +79,7 @@ python3 claude_mem_audit.py ~/.claude-mem/claude-mem.db --show-sessions --json
 
 ## 预览状态与反馈
 
-合成示例已在 macOS Python 3.9 上运行。真实用户数据库的兼容性尚未得到独立确认。试用后可以在 [Issues](../../issues) 反馈 Claude-Mem 版本、操作系统、Python 版本和字段兼容问题。
+合成示例已在 macOS Python 3.9 上运行。真实用户数据库的兼容性尚未得到独立确认。试用后可以在 [Issues](https://github.com/LydiaTools/claude-mem-observation-audit/issues) 反馈 Claude-Mem 版本、操作系统、Python 版本和字段兼容问题。
 
 请勿在 Issue 中附上数据库、工作进程日志、提示词、工具输入或工具响应。
 

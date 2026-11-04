@@ -8,13 +8,15 @@ Claude-Mem Observation Audit is a small, read-only Python CLI for that one check
 
 It does not decide that data was lost. An unlinked row can be intentional or still processing.
 
-## Try it first
+## Quick start
 
 ~~~bash
+git clone https://github.com/LydiaTools/claude-mem-observation-audit.git
+cd claude-mem-observation-audit
 python3 claude_mem_audit.py --demo
 ~~~
 
-The demo uses a synthetic in-memory database. It does not open your Claude-Mem files.
+Requires Python 3.9 or newer. There are no third-party packages to install. The demo uses a synthetic in-memory database; it does not open your Claude-Mem files.
 
 Example:
 
@@ -77,7 +79,7 @@ This CLI makes the database relationship visible without reading the stored tool
 
 ## Preview status and feedback
 
-The synthetic demo has been run on macOS with Python 3.9. Compatibility with real user databases has not yet been independently confirmed. If you try it, report the Claude-Mem version, operating system, Python version, and any schema error in [Issues](../../issues).
+The synthetic demo has been run on macOS with Python 3.9. Compatibility with real user databases has not yet been independently confirmed. If you try it, report the Claude-Mem version, operating system, Python version, and any schema error in [Issues](https://github.com/LydiaTools/claude-mem-observation-audit/issues).
 
 Please do not attach a database, worker log, prompt, tool input, or tool response to an issue.
 
