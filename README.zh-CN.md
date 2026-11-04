@@ -102,6 +102,8 @@ python3 claude_mem_audit.py ~/.claude-mem/claude-mem.db --worker-log worker.log 
 
 用户曾报告额度冷却或工作进程重启后，有观察记录仍未关联：[issue #4580](https://github.com/thedotmack/claude-mem/issues/4580)。[issue #4737](https://github.com/thedotmack/claude-mem/issues/4737) 中也有用户报告停放批次和会话结束时的丢弃计数，并讨论队列深度为零时仍可能存在停放事件。Claude-Mem v15.9.0 的 [doctor 命令](https://github.com/thedotmack/claude-mem/blob/v15.9.0/src/npx-cli/commands/doctor.ts)会检查安装和工作进程健康状态，但不会查询 tool_uses.observation_id。
 
+#4737 的一位讨论者也贴出了统计这些公开日志标记的单文件脚本。本项目把同一标记计数思路与独立的只读 SQLite 关联检查、双语说明、仅输出汇总的方式和合成日志样例组合起来；不宣称有新的恢复方法，也不据此证明观察记录已经丢失。
+
 这个小工具让你查看数据库和指定日志中的线索，不读取工具内容，也不会联网发送本地数据。
 
 ## 预览状态与反馈

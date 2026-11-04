@@ -102,6 +102,8 @@ It opens SQLite with mode=ro and issues schema reads and aggregate SELECT querie
 
 Users have reported observations left unlinked after quota cooldowns and worker restarts in [issue #4580](https://github.com/thedotmack/claude-mem/issues/4580). In [issue #4737](https://github.com/thedotmack/claude-mem/issues/4737), users shared counts of parked batches and session-end drops, and discussed how a zero queue-depth reading can miss parked events. Claude-Mem's v15.9.0 [doctor command](https://github.com/thedotmack/claude-mem/blob/v15.9.0/src/npx-cli/commands/doctor.ts) checks installation and worker health; it does not query tool_uses.observation_id.
 
+A commenter in #4737 also shared a one-file counter for those public log markers. This repository packages that same marker-counting idea with a separate read-only SQLite link audit, bilingual instructions, aggregate-only output, and a synthetic fixture. It does not claim a new recovery method or prove that an observation was lost.
+
 This CLI makes database and selected log evidence visible without reading stored tool content or sending local data over the network.
 
 ## Preview status and feedback
